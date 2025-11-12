@@ -7,6 +7,7 @@ using PromptSync.Desktop.ViewModels;
 using PromptSync.Desktop.Views;
 using PromptSync.Core.Services;
 using PromptSync.Core.DNA;
+using PromptSync.Desktop.Services;
 
 namespace PromptSync.Desktop;
 
@@ -34,6 +35,10 @@ public partial class App : Application
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
+        // Start activation service
+        var activation = Services.GetRequiredService<IActivationService>();
+        _ = activation.StartAsync();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainWindow = new PromptSelectorWindow
@@ -53,8 +58,8 @@ public partial class App : Application
         services.AddSingleton<IGitService, MockGitService>();
         services.AddSingleton<IAIService, MockAIService>();
 
-        // TODO: Register real services when implemented
-        // services.AddSingleton<IGitHubService, GitHubService>();
+        // Activation service for hotkey agent IPC
+        services.AddSingleton<IActivationService, ActivationService>();
 
         // Register DNA Lab features (when implemented)
         // services.AddSingleton<IQualityScorer, QualityScorer>();

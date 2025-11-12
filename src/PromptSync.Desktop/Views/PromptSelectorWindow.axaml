@@ -65,8 +65,8 @@
               BorderThickness="1"
               BorderBrush="#E0E0E0">
         
-        <ListBox ItemsSource="{Binding FilteredPrompts}"
-                 SelectedItem="{Binding SelectedPrompt}"
+        <ListBox x:Name="PromptsListBox" ItemsSource="{Binding FilteredPrompts}"
+                 SelectedItem="{Binding SelectedPrompt, Mode=TwoWay}"
                  Background="Transparent"
                  BorderThickness="0">
           
@@ -126,7 +126,7 @@
                    FontSize="12"
                    Opacity="0.7"/>
         
-        <Button Grid.Column="1"
+        <Button x:Name="SelectButton" Grid.Column="1"
                 Content="Select"
                 Command="{Binding SelectPromptCommand}"
                 CommandParameter="{Binding SelectedPrompt}"

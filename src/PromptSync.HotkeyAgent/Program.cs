@@ -1,11 +1,16 @@
 using Microsoft.Extensions.Logging;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Net.Http;
+using System.IO;
 
 namespace PromptSync.HotkeyAgent;
 
 /// <summary>
 /// Platform-agnostic hotkey agent entry point.
 /// Delegates to platform-specific implementations.
+/// Also supports a test activation mode: --test-activate
 /// </summary>
 internal class Program
 {
@@ -21,6 +26,12 @@ internal class Program
 
         logger.LogInformation("?? PromptSync Hotkey Agent starting...");
         logger.LogInformation("Platform: {Platform}", GetPlatformName());
+
+        // Test activation mode
+        if (args.Length > 0 && args[0] == "--test-activate")
+        {
+            return await RunTestActivate(logger);
+        }
 
         try
         {
@@ -77,5 +88,41 @@ internal class Program
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return "Linux";
         return "Unknown";
+    }
+
+    private static async Task<int> RunTestActivate(ILogger logger)
+    {
+        try
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var path = Path.Combine(appData, "PromptSync", "activation.json");
+            if (!File.Exists(path))
+            {
+                logger.LogError("activation.json not found: {Path}", path);
+                return 2;
+            }
+
+            var json = await File.ReadAllTextAsync(path);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var port = root.GetProperty("port").GetInt32();
+            var token = root.GetProperty("token").GetString();
+
+            var url = $"http://127.0.0.1:{port}/activate";
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+
+            var payload = new { hotkey = "Ctrl+Shift+P", activeApp = "code", timestamp = DateTimeOffset.UtcNow };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var resp = await http.PostAsync(url, content);
+            var respBody = await resp.Content.ReadAsStringAsync();
+            logger.LogInformation("POST {Url} => {Status}: {Body}", url, resp.StatusCode, respBody);
+            return resp.IsSuccessStatusCode ? 0 : 3;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Test activate failed");
+            return 4;
+        }
     }
 }
