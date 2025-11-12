@@ -1,0 +1,40 @@
+# PromptSync Dependencies
+
+# Core dependencies
+PyGithub>=2.1.1          # GitHub API integration
+PyYAML>=6.0              # Config file parsing
+requests>=2.31.0         # HTTP requests for Claude API
+
+# Hotkey and UI
+pynput>=1.7.6            # Global hotkey listener
+pyperclip>=1.8.2         # Clipboard operations
+
+# Optional: GUI (uncomment if using Tkinter alternative)
+# PyQt5>=5.15.9          # Alternative UI framework
+
+# Fuzzy search (for Phase 2)
+thefuzz>=0.20.0          # Fuzzy string matching
+python-Levenshtein>=0.21.0  # Faster fuzzy matching
+
+# Optional: Image processing
+Pillow>=10.0.0           # Image handling for reverse engineering
+
+# Optional: Advanced features
+# sentence-transformers>=2.2.2  # For semantic search (Phase 3)
+# chromadb>=0.4.0              # Vector database (Phase 3)
+
+# Development dependencies
+pytest>=7.4.0            # Testing
+pytest-cov>=4.1.0        # Coverage
+black>=23.7.0            # Code formatting
+flake8>=6.1.0            # Linting
+
+# Platform-specific
+# Windows:
+# - pywin32>=306         # Windows-specific features
+
+# macOS:
+# - pyobjc-framework-Cocoa>=9.2  # macOS-specific features
+
+# Linux:
+# - python-xlib>=0.33    # X11 window detection

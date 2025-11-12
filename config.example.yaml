@@ -1,0 +1,97 @@
+# PromptSync Configuration
+# Copy this to config.yaml and fill in your values
+
+# GitHub Configuration
+github:
+  # Your GitHub Personal Access Token
+  # Create one at: https://github.com/settings/tokens
+  # Needs 'repo' scope for private repos
+  token: "ghp_YOUR_TOKEN_HERE"
+  
+  # Your prompts repository (username/repo-name)
+  repo: "your-username/my-prompts"
+  
+  # How often to sync (seconds)
+  sync_interval: 300  # 5 minutes
+
+# Local Settings
+local_path: "./prompts"  # Where to store prompts locally
+
+# Hotkey Configuration
+# Format: "modifier+modifier+key"
+# Examples:
+#   - "ctrl+shift+p"
+#   - "cmd+shift+p"  (macOS)
+#   - "alt+p"
+hotkey: "ctrl+shift+p"
+
+# Claude API (Optional - for full DNA features)
+# Get your key at: https://console.anthropic.com/
+claude:
+  api_key: ""  # Leave empty to use mock/basic features
+
+# Feature Flags
+features:
+  # Enable DNA Lab features
+  reverse_engineering: true
+  auto_iteration: true
+  security_scanning: true
+  quality_scoring: true
+  encryption: true
+  
+  # Advanced features (Phase 2+)
+  fuzzy_search: true
+  semantic_search: false  # Requires embeddings setup
+  usage_tracking: true
+
+# Matching Configuration
+matching:
+  # Minimum score to show a prompt (0-100)
+  min_score: 20
+  
+  # Maximum prompts to show in UI
+  max_results: 5
+  
+  # Enable context detection
+  detect_app: true
+  detect_file_type: true
+  detect_clipboard: true
+
+# Security Settings
+security:
+  # Auto-execute encrypted prompts marked safe
+  auto_execute_safe: false
+  
+  # Block high-risk prompts automatically
+  block_high_risk: true
+  
+  # Require confirmation for file operations
+  confirm_file_ops: true
+
+# UI Settings
+ui:
+  # Theme (light/dark)
+  theme: "dark"
+  
+  # Font size
+  font_size: 12
+  
+  # Window size (width x height)
+  window_size: [600, 400]
+  
+  # Always on top
+  always_on_top: true
+
+# Advanced
+advanced:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  log_level: "INFO"
+  
+  # Log file location
+  log_file: "./promptsync.log"
+  
+  # Cache duration (hours)
+  cache_duration: 24
+  
+  # Max API retries
+  max_retries: 3
