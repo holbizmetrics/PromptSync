@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PromptSync - Simple GUI
-A working prompt manager with actual UI
+PromptSync - Simple GUI (FIXED VERSION)
+A working prompt manager with actual UI - ALL ERRORS CORRECTED
 """
 
 import tkinter as tk
@@ -45,47 +45,65 @@ tags: [example, test]
 This is an example prompt.
 
 Try editing files in the prompts/ folder!
-""")
+""", encoding='utf-8')
         
         # Load all .md files
-        for file in prompts_dir.glob("**/*.md"):
+        for file in prompts_dir.glob("*.md"):
             try:
-                content = file.read_text(encoding='utf-8')
+                # FIX: Use encoding='utf-8' and errors='ignore' to handle bad bytes
+                content = file.read_text(encoding='utf-8', errors='ignore')
                 
                 # Parse frontmatter
-                title = file.stem.replace('-', ' ').replace('_', ' ').title()
-                tags = []
-                prompt_text = content
-                
                 if content.startswith('---'):
                     parts = content.split('---', 2)
                     if len(parts) >= 3:
-                        # Parse YAML frontmatter
                         frontmatter = parts[1]
-                        for line in frontmatter.split('\n'):
-                            if line.startswith('title:'):
-                                title = line.split('title:', 1)[1].strip()
-                            elif line.startswith('tags:'):
-                                tags_str = line.split('tags:', 1)[1].strip()
-                                tags = [t.strip(' []') for t in tags_str.split(',')]
+                        body = parts[2].strip()
                         
-                        prompt_text = parts[2].strip()
-                
-                prompts.append({
-                    'title': title,
-                    'tags': tags,
-                    'content': prompt_text,
-                    'file': str(file)
-                })
+                        # Parse title
+                        title = None
+                        tags = []
+                        
+                        for line in frontmatter.strip().split('\n'):
+                            if line.startswith('title:'):
+                                title = line.split(':', 1)[1].strip()
+                            elif line.startswith('tags:'):
+                                tags_str = line.split(':', 1)[1].strip()
+                                tags = [t.strip(' []\'\"') for t in tags_str.split(',')]
+                        
+                        if title:
+                            prompts.append({
+                                'title': title,
+                                'tags': tags,
+                                'content': body,
+                                'file': file
+                            })
+                    else:
+                        # No proper frontmatter, use filename
+                        prompts.append({
+                            'title': file.stem,
+                            'tags': [],
+                            'content': content,
+                            'file': file
+                        })
+                else:
+                    # No frontmatter, use filename
+                    prompts.append({
+                        'title': file.stem,
+                        'tags': [],
+                        'content': content,
+                        'file': file
+                    })
+                    
             except Exception as e:
                 print(f"Error loading {file}: {e}")
+                continue
         
         return prompts
     
     def build_ui(self):
-        """Build the user interface"""
-        
-        # Title
+        """Build the main UI"""
+        # Title bar
         title_frame = tk.Frame(self.root, bg='#4F46E5', height=60)
         title_frame.pack(fill=tk.X)
         title_frame.pack_propagate(False)
@@ -141,13 +159,11 @@ Try editing files in the prompts/ folder!
         self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.listbox.yview)
         
-        # Populate list
-        self.refresh_list()
-        
         # Bind events
         self.listbox.bind('<Double-Button-1>', self.on_select)
         self.listbox.bind('<Return>', self.on_select)
         
+        # FIX: Create preview_text BEFORE calling refresh_list()
         # Preview frame
         preview_frame = tk.LabelFrame(self.root, text="Preview", font=('Arial', 10, 'bold'))
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -194,6 +210,9 @@ Try editing files in the prompts/ folder!
             fg='#6B7280'
         )
         self.info_label.pack(side=tk.RIGHT, padx=5)
+        
+        # FIX: NOW call refresh_list() AFTER preview_text is created
+        self.refresh_list()
     
     def refresh_list(self, filter_text=''):
         """Refresh the prompt list"""
@@ -215,7 +234,9 @@ Try editing files in the prompts/ folder!
         # Select first item
         if self.listbox.size() > 0:
             self.listbox.selection_set(0)
-            self.show_preview(None)
+            # FIX: Only call show_preview if preview_text exists
+            if hasattr(self, 'preview_text'):
+                self.show_preview(None)
     
     def on_search(self, *args):
         """Handle search"""
@@ -223,6 +244,10 @@ Try editing files in the prompts/ folder!
     
     def show_preview(self, event):
         """Show preview of selected prompt"""
+        # FIX: Check if preview_text exists before using it
+        if not hasattr(self, 'preview_text'):
+            return
+            
         selection = self.listbox.curselection()
         if not selection:
             return
@@ -243,7 +268,7 @@ Try editing files in the prompts/ folder!
                 break
     
     def on_select(self, event):
-        """Handle prompt selection"""
+        """Handle double-click or Enter"""
         self.copy_and_close()
     
     def copy_and_close(self):
@@ -257,48 +282,49 @@ Try editing files in the prompts/ folder!
         display_text = self.listbox.get(idx)
         title = display_text.split('[')[0].strip()
         
-        # Find and copy the prompt
         for prompt in self.prompts:
             if prompt['title'] == title:
-                pyperclip.copy(prompt['content'])
-                messagebox.showinfo("Copied!", f"'{title}' copied to clipboard!")
-                self.root.destroy()
-                return
+                try:
+                    pyperclip.copy(prompt['content'])
+                    messagebox.showinfo("Copied!", f"'{title}' copied to clipboard!")
+                    self.root.quit()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to copy: {e}")
+                break
     
     def refresh_prompts(self):
-        """Reload prompts from disk"""
+        """Reload all prompts"""
         self.prompts = self.load_prompts()
         self.refresh_list(self.search_var.get())
         self.info_label.config(text=f"{len(self.prompts)} prompts loaded")
         messagebox.showinfo("Refreshed", f"Loaded {len(self.prompts)} prompts")
     
     def setup_hotkey(self):
-        """Setup Ctrl+Shift+P hotkey"""
+        """Setup global hotkey (Ctrl+Shift+P)"""
         def on_activate():
             self.root.deiconify()
             self.root.lift()
             self.root.focus_force()
         
         def for_canonical(f):
-            return lambda k: f(listener.canonical(k))
+            return lambda k: f(l.canonical(k))
         
         hotkey = keyboard.HotKey(
             keyboard.HotKey.parse('<ctrl>+<shift>+p'),
             on_activate
         )
         
-        listener = keyboard.Listener(
+        l = keyboard.Listener(
             on_press=for_canonical(hotkey.press),
             on_release=for_canonical(hotkey.release)
         )
         
-        listener_thread = threading.Thread(target=listener.start, daemon=True)
-        listener_thread.start()
+        l.start()
     
     def run(self):
-        """Run the application"""
+        """Start the application"""
         self.root.mainloop()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = PromptSyncUI()
     app.run()
