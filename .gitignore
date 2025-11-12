@@ -19,6 +19,15 @@ dist/
 *.swo
 *~
 
+# Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
 # OS
 .DS_Store
 Thumbs.db
@@ -38,3 +47,24 @@ htmlcov/
 # PromptSync specific
 prompts/  # User's personal prompt library (tracked separately)
 *.backup
+
+# NuGet
+packages/
+*.nupkg
+
+# Publish output
+publish/
+
+# Node
+node_modules/
+
+# Coverage
+coverage/
+*.coverage
+
+# Misc
+*.tmp
+*.cache
+
+# Ignore local settings
+local.settings.json
