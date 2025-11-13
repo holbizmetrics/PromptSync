@@ -1,470 +1,447 @@
-# PromptSync - Getting Started Guide
+# Getting Started with PromptSync
 
-Welcome to PromptSync development! This guide will help you set up your environment and start contributing.
+## 🎯 Quick Start (5 Minutes)
+
+### 1. Install Dependencies
+
+```bash
+pip install PyGithub PyYAML requests pynput pyperclip thefuzz Pillow
+```
+
+### 2. Run the Demo
+
+```bash
+cd promptsync
+python demo_dna.py
+```
+
+This shows you all the DNA features interactively!
 
 ---
 
-## Prerequisites
+## 📚 Feature Walkthroughs
 
-### Required Software
+### Feature 1: Reverse Engineering
 
-1. **.NET 8.0 SDK** or later
-   - Download: https://dotnet.microsoft.com/download
-   - Verify: `dotnet --version` (should show 8.0.x or higher)
+**Extract a prompt from an image:**
 
-2. **Git**
-   - Download: https://git-scm.com/downloads
-   - Verify: `git --version`
+```python
+from src.dna.reverse_engineer import ReverseEngineer
 
-3. **IDE** (choose one):
-   - **Visual Studio 2022** (recommended for Windows)
-     - Community Edition is free
-     - Workload: ".NET Desktop Development"
-   - **JetBrains Rider** (cross-platform, excellent for .NET)
-   - **Visual Studio Code** with C# extension
+re = ReverseEngineer(api_key="your-claude-key")  # Optional
+result = re.from_image("competitor_design.png")
 
-4. **GitHub Account**
-   - Sign up at https://github.com
-   - Generate a Personal Access Token:
-     - Settings ? Developer settings ? Personal access tokens ? Tokens (classic)
-     - Scopes: `repo` (Full control of private repositories)
-
----
-
-## Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/holbizmetrics/PromptSync.git
-cd PromptSync
+print(result['extracted_prompt'])
+# Output:
+# Create a landing page hero section with:
+# - Bold headline: "Transform Your Workflow"
+# - Gradient background: purple to blue
+# - Two CTA buttons (primary/secondary)
+# ...
 ```
 
----
+**From text output:**
 
-## Step 2: Restore Dependencies
+```python
+result = re.from_text("""
+Q4 Revenue: $4.2M (+23% YoY)
+MRR: $350K
+CAC: $1,200
+""")
 
-```bash
-dotnet restore
+print(result['extracted_prompt'])
+# Output:
+# Generate a business metrics report in structured format...
 ```
 
-This downloads all NuGet packages defined in project files.
+### Feature 2: Automated Iteration
 
----
+**Improve a prompt automatically:**
 
-## Step 3: Build the Solution
+```python
+from src.dna.iterator import PromptIterator
 
-```bash
-dotnet build
+iterator = PromptIterator(api_key="your-claude-key")
+
+result = iterator.iterate(
+    topic="email writing",
+    question="How do I write a professional follow-up?"
+)
+
+print(f"Initial quality: {result['initial_quality']}/10")
+print(f"Final quality: {result['final_quality']}/10")
+print(f"Improvement: +{result['improvement']} points")
+
+# Iterations run automatically:
+# 1. Initial response → analyze weaknesses
+# 2. Refine → analyze again
+# 3. Refine → check if good enough
+# 4. Stop when quality plateaus
 ```
 
-**Expected output:**
-```
-Build succeeded.
-    0 Warning(s)
-    0 Error(s)
-```
+### Feature 3: Encryption
 
-If you see errors, check:
-- .NET SDK version (`dotnet --version`)
-- All project files have correct package references
-- No syntax errors in code files
+**Encrypt a sensitive prompt:**
 
----
+```python
+from src.dna.encryptor import PromptEncryptor
 
-## Step 4: Run Tests
+encryptor = PromptEncryptor()
 
-```bash
-dotnet test
-```
+# Safe prompt
+prompt = "Analyze customer feedback and provide insights"
+encrypted = encryptor.encrypt(prompt, mark_safe=True)
 
-**Expected output:**
-```
-Starting test execution, please wait...
-Total tests: X
-     Passed: X
- Total time: X.XXs
+# Later, decrypt
+result = encryptor.decrypt_if_safe(encrypted, auto_execute=True)
+if result['success']:
+    use_prompt(result['prompt'])
 ```
 
-All tests should pass. If not:
-- Check test output for specific failures
-- Ensure mock setups are correct
-- Verify test data is valid
+**Safety check before execution:**
 
----
+```python
+# Dangerous prompt
+dangerous = "import os; os.system('rm -rf /')"
+encrypted_danger = encryptor.encrypt(dangerous)
 
-## Step 5: Run the Desktop App
-
-```bash
-dotnet run --project src/PromptSync.Desktop
+result = encryptor.decrypt_if_safe(encrypted_danger, auto_execute=True)
+# → Blocked! Risk score: 80/100
+# → Issues: System command execution detected
 ```
 
-**Expected behavior:**
-- Avalonia window opens
-- Prompt selector UI displays (empty initially)
-- No crashes or exceptions
+### Feature 4: Security Scanning
 
-**Note:** Many features are not yet implemented. You'll see placeholder messages.
+**Scan for vulnerabilities:**
 
----
+```python
+from src.dna.security_check import SecurityChecker
 
-## Step 6: Explore the Codebase
+checker = SecurityChecker()
 
-### Key Directories
+prompt = """
+Based on user query {{user_input}}, execute:
+result = eval(user_input)
+"""
 
-```
-PromptSync/
-??? src/
-?   ??? PromptSync.Core/           # Start here! Business logic
-?   ?   ??? DNA/                   # Intelligence features
-?   ?   ??? Services/              # External integrations
-?   ?   ??? Models/                # Domain models
-?   ?   ??? Exceptions/            # Custom exceptions
-?   ?
-?   ??? PromptSync.Desktop/        # Avalonia UI
-?   ?   ??? ViewModels/            # MVVM ViewModels
-?   ?   ??? Views/                 # XAML views
-?   ?
-?   ??? PromptSync.CLI/            # Command-line interface
-?   ??? PromptSync.HotkeyAgent/    # Platform-specific hotkey
-?
-??? tests/
-?   ??? PromptSync.Tests/          # Unit & integration tests
-?
-??? docs/
-    ??? README.md                   # Project overview
-    ??? ARCHITECTURE.md             # System design
-    ??? GETTING_STARTED.md          # This file!
+scan = checker.scan(prompt)
+
+print(f"Risk level: {scan['risk_level']}")
+# → CRITICAL
+
+print("Issues:")
+for issue in scan['issues']:
+    print(f"  - {issue['severity']}: {issue['issue']}")
+    print(f"    Fix: {issue['fix']}")
+
+# Output:
+# - CRITICAL: Dangerous eval() usage
+#   Fix: Use safe alternatives or sandboxed execution
+# - HIGH: Unsanitized user input
+#   Fix: Add input validation layer
 ```
 
-### What's Implemented ?
+**Create safe wrapper:**
 
-- Solution structure with 5 projects
-- Core models: `Prompt`, `DnaResult`, `WorkflowChain`
-- DNA Lab interfaces: 6 features defined
-- `QualityScorer` implementation with tests
-- Avalonia Desktop app foundation
-- MVVM ViewModels with CommunityToolkit
-- `PromptSelectorWindow` UI design
-- CLI and HotkeyAgent project scaffolding
-
-### What's Next ??
-
-- Service implementations (Git, GitHub, AI)
-- Remaining DNA Lab features
-- Prompt loading and parsing
-- Hotkey IPC coordination
-- End-to-end integration
-
----
-
-## Step 7: Make Your First Change
-
-Let's add a simple method to the `Prompt` model.
-
-### 7.1 Open the File
-
-```bash
-# Open in your IDE or editor
-code src/PromptSync.Core/Models/Prompt.cs
+```python
+safe_prompt = checker.create_safe_wrapper(prompt)
+# Adds security guardrails automatically
 ```
 
-### 7.2 Add a Method
+### Feature 5: Quality Scoring
 
-Add this method to the `Prompt` record:
+**Score a prompt:**
 
-```csharp
-/// <summary>
-/// Checks if the prompt has any tags.
-/// </summary>
-/// <returns>True if tags exist, false otherwise.</returns>
-public bool HasTags() => Tags.Any();
+```python
+from src.dna.quality_score import QualityScorer
+
+scorer = QualityScorer()
+
+prompt = "Write something about AI"
+total, breakdown = scorer.score(prompt)
+
+print(f"Overall: {total}/10")
+print("Breakdown:")
+for dimension, score in breakdown.items():
+    print(f"  {dimension}: {score}/10")
+
+# Output:
+# Overall: 3.2/10
+# Breakdown:
+#   clarity: 4/10
+#   specificity: 2/10
+#   structure: 3/10
+#   context: 2/10
+#   examples: 3/10
 ```
 
-### 7.3 Build and Test
+**Get improvement suggestions:**
 
-```bash
-dotnet build
-# Should succeed with no errors
+```python
+suggestions = scorer.suggest_improvements(prompt, breakdown)
+for suggestion in suggestions:
+    print(f"💡 {suggestion}")
+
+# Output:
+# 💡 Improve clarity: Replace vague words with specific descriptors
+# 💡 Add specificity: Include word count, target audience
+# 💡 Improve structure: Break into sections with headers
 ```
 
-### 7.4 Write a Test
+**Compare two prompts:**
 
-Create a test in `tests/PromptSync.Tests/Core/Models/PromptTests.cs`:
+```python
+prompt1 = "Write about AI"
+prompt2 = "Write a 500-word article about AI in healthcare for doctors"
 
-```csharp
-using FluentAssertions;
-using PromptSync.Core.Models;
-using Xunit;
-
-namespace PromptSync.Tests.Core.Models;
-
-public class PromptTests
-{
-    [Fact]
-    public void HasTags_WithNoTags_ReturnsFalse()
-    {
-        // Arrange
-        var prompt = new Prompt
-        {
-            Id = "test",
-            Title = "Test",
-            Content = "Content",
-            Tags = Array.Empty<string>()
-        };
-
-        // Act
-        var result = prompt.HasTags();
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void HasTags_WithTags_ReturnsTrue()
-    {
-        // Arrange
-        var prompt = new Prompt
-        {
-            Id = "test",
-            Title = "Test",
-            Content = "Content",
-            Tags = new[] { "coding", "debug" }
-        };
-
-        // Act
-        var result = prompt.HasTags();
-
-        // Assert
-        result.Should().BeTrue();
-    }
-}
-```
-
-### 7.5 Run Tests Again
-
-```bash
-dotnet test
-# All tests should pass, including your new ones!
+comparison = scorer.compare(prompt1, prompt2)
+print(f"Winner: {comparison['winner']}")
+print(f"Improvement: {comparison['improvement_percentage']:.0f}%")
 ```
 
 ---
 
-## Step 8: Understand the MVVM Pattern
+## 🎨 Creating Good Prompts
 
-Let's examine the `PromptSelectorViewModel`:
+### Template Structure
 
-```csharp
-public partial class PromptSelectorViewModel : ViewModelBase
-{
-    // Observable property (auto-generates PropertyChanged events)
-    [ObservableProperty]
-    private string _searchQuery = string.Empty;
-
-    // Command (auto-generates ICommand implementation)
-    [RelayCommand]
-    private async Task LoadPromptsAsync()
-    {
-        IsLoading = true;
-        // Load prompts logic
-        IsLoading = false;
-    }
-}
-```
-
-**XAML Binding:**
-
-```xml
-<TextBox Text="{Binding SearchQuery}" />
-<Button Command="{Binding LoadPromptsCommand}" />
-```
-
-**How it works:**
-1. `[ObservableProperty]` generates `SearchQuery` property with `INotifyPropertyChanged`
-2. `[RelayCommand]` generates `LoadPromptsCommand` of type `IAsyncRelayCommand`
-3. XAML binds to these automatically
-4. No boilerplate code!
-
+```markdown
+---
+title: Professional Email Follow-up
+tags: [email, business, follow-up]
+apps: [gmail, outlook]
+patterns: [meeting, follow.?up, next steps]
+file_types: []
+usage_count: 0
 ---
 
-## Step 9: Debugging Tips
+Write a professional follow-up email after {{meeting_type}}.
 
-### In Visual Studio
+**Context:**
+- Meeting with: {{recipient}}
+- Date: {{date}}
+- Key discussion points: {{points}}
 
-1. Set breakpoint (F9) in code
-2. Press F5 (Start Debugging)
-3. App launches with debugger attached
-4. Step through code (F10/F11)
+**Requirements:**
+- Tone: Professional but warm
+- Length: 150-200 words
+- Include: Thank you, key takeaways, next steps
+- Format: Standard business email
 
-### In VS Code
+**Example structure:**
+Subject: Following up on [meeting topic]
 
-1. Install C# extension
-2. Open Command Palette (Ctrl+Shift+P)
-3. "C#: Generate Assets for Build and Debug"
-4. Press F5 to debug
+Hi [Name],
 
-### Common Issues
+Thank you for [specific thing]...
 
-**"The type or namespace name 'Avalonia' could not be found"**
-- Run `dotnet restore`
-- Rebuild solution
+Looking forward to [next steps].
 
-**"System.ArgumentNullException" in tests**
-- Check mock setups
-- Ensure all dependencies are injected
-
-**Avalonia window doesn't render**
-- Check XAML syntax
-- Verify DataContext is set
-- Look for binding errors in output window
-
----
-
-## Step 10: Contribution Workflow
-
-### 10.1 Create a Branch
-
-```bash
-git checkout -b feature/my-awesome-feature
+Best,
+[Your name]
 ```
 
-### 10.2 Make Changes
+### Quality Checklist
 
-- Follow SOLID principles
-- Write tests for new code
-- Add XML documentation
-- Keep commits small and focused
+Before saving a prompt, check:
 
-### 10.3 Test Locally
+- [ ] **Clarity**: No vague words (good, nice, some)
+- [ ] **Specificity**: Has constraints (word count, format, tone)
+- [ ] **Structure**: Uses headers, lists, sections
+- [ ] **Context**: Includes background and goal
+- [ ] **Examples**: Shows desired output format
+- [ ] **Variables**: Uses {{placeholders}} for customization
+- [ ] **Metadata**: Has tags, apps, patterns for matching
 
-```bash
-dotnet build
-dotnet test
-# Ensure StyleCop warnings are addressed
+### Metadata Guide
+
+**tags**: Keywords for content matching
+```yaml
+tags: [python, debug, error, performance]
 ```
 
-### 10.4 Commit and Push
-
-```bash
-git add .
-git commit -m "feat: Add awesome feature"
-git push origin feature/my-awesome-feature
+**apps**: Where this prompt is useful
+```yaml
+apps: [vscode, pycharm, jupyter, cursor]
 ```
 
-### 10.5 Open Pull Request
-
-1. Go to GitHub repository
-2. Click "Pull Requests" ? "New Pull Request"
-3. Select your branch
-4. Fill out PR template:
-   - Description of changes
-   - Testing done
-   - Related issues
-5. Submit for review
-
----
-
-## Useful Commands
-
-### Build
-
-```bash
-dotnet build                           # Build all projects
-dotnet build -c Release                # Release build
-dotnet build --no-restore              # Skip package restore
+**patterns**: Regex patterns to trigger this prompt
+```yaml
+patterns: [
+  "error|exception|traceback",
+  "def\\s+\\w+\\(",
+  "import\\s+\\w+"
+]
 ```
 
-### Test
-
-```bash
-dotnet test                            # Run all tests
-dotnet test --filter "Category=Unit"   # Run unit tests only
-dotnet test --logger "console;verbosity=detailed"  # Verbose output
-```
-
-### Run
-
-```bash
-dotnet run --project src/PromptSync.Desktop  # Run desktop app
-dotnet run --project src/PromptSync.CLI      # Run CLI
-```
-
-### Clean
-
-```bash
-dotnet clean                           # Remove build artifacts
-rm -rf */bin */obj                     # Deep clean (PowerShell: Remove-Item)
-```
-
-### Publish
-
-```bash
-dotnet publish -c Release -r win-x64 --self-contained /p:PublishSingleFile=true
-# Creates single-file .exe in bin/Release/net8.0/win-x64/publish/
+**file_types**: File extensions
+```yaml
+file_types: [.py, .ipynb]
 ```
 
 ---
 
-## Learning Resources
+## 🔄 Complete Workflow Example
 
-### .NET & C#
+### Scenario: Building a Customer Email Template
 
-- [Microsoft Learn - C#](https://learn.microsoft.com/en-us/dotnet/csharp/)
-- [.NET API Browser](https://learn.microsoft.com/en-us/dotnet/api/)
+**Step 1: Find inspiration**
+```bash
+# Screenshot a great customer email you received
+# Save as: great_email.png
+```
 
-### Avalonia UI
+**Step 2: Reverse engineer**
+```python
+from src.dna.reverse_engineer import ReverseEngineer
 
-- [Avalonia Docs](https://docs.avaloniaui.net/)
-- [Avalonia Samples](https://github.com/AvaloniaUI/Avalonia.Samples)
+re = ReverseEngineer()
+result = re.from_image("great_email.png")
+extracted = result['extracted_prompt']
+```
 
-### MVVM
+**Step 3: Iterate to improve**
+```python
+from src.dna.iterator import PromptIterator
 
-- [CommunityToolkit.Mvvm Docs](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/)
-- [MVVM Pattern Overview](https://learn.microsoft.com/en-us/dotnet/architecture/maui/mvvm)
+iterator = PromptIterator()
+refined = iterator.iterate(
+    topic="customer communication",
+    question="Optimize this email prompt",
+    initial_prompt=extracted
+)
+optimized = refined['final_response']
+```
 
-### Testing
+**Step 4: Security check**
+```python
+from src.dna.security_check import SecurityChecker
 
-- [xUnit Docs](https://xunit.net/)
-- [FluentAssertions Docs](https://fluentassertions.com/)
-- [Moq Quickstart](https://github.com/moq/moq4/wiki/Quickstart)
+checker = SecurityChecker()
+scan = checker.scan(optimized)
+
+if scan['risk_score'] > 20:
+    print("⚠️  Security issues found!")
+    optimized = checker.create_safe_wrapper(optimized)
+```
+
+**Step 5: Quality score**
+```python
+from src.dna.quality_score import QualityScorer
+
+scorer = QualityScorer()
+total, _ = scorer.score(optimized)
+
+if total < 8:
+    print("💡 Needs improvement")
+    suggestions = scorer.suggest_improvements(optimized, _)
+    # Manually apply suggestions
+```
+
+**Step 6: Save to GitHub**
+```python
+# Save as: prompts/customer-emails/follow-up-v2.md
+# Commit and push to your repo
+# PromptSync will auto-sync on next pull
+```
+
+**Step 7: Use it!**
+```
+# Next time you're in Gmail composing to a customer:
+# Press Ctrl+Shift+P
+# → PromptSync suggests: "Customer Follow-up v2"
+# → One click to insert
+# → Variables auto-fill from email context
+```
 
 ---
 
-## Next Steps
+## 🐛 Troubleshooting
 
-Now that you're set up, consider tackling one of these tasks:
+### Demo won't run
+```bash
+# Check Python version (need 3.8+)
+python --version
 
-1. **Implement Git Service**
-   - Use LibGit2Sharp
-   - Implement `IGitService` interface
-   - Write unit tests with mocked repository
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
+```
 
-2. **Complete Security Scanner**
-   - Pattern-based vulnerability detection
-   - Risk scoring algorithm
-   - Integration with AI service
+### API errors
+```bash
+# Test Claude API connection
+python -c "import requests; print(requests.get('https://api.anthropic.com').status_code)"
 
-3. **Build Settings UI**
-   - Create `SettingsWindow.axaml`
-   - ViewModel for configuration
-   - Save/load settings to JSON
+# Check your API key in config.yaml
+# Note: Some features work without API key (use mock data)
+```
 
-4. **Add Prompt Parser**
-   - Parse Markdown files
-   - Extract frontmatter (YAML)
-   - Validate prompt structure
+### Import errors
+```bash
+# Make sure you're in the right directory
+cd promptsync
 
-5. **Implement Windows Hotkey Agent**
-   - P/Invoke to RegisterHotKey
-   - IPC client to desktop app
-   - Error handling and logging
-
----
-
-## Getting Help
-
-- **Issues**: Open a GitHub issue for bugs or feature requests
-- **Discussions**: Start a discussion for questions or ideas
-- **Code Review**: Tag maintainers in your PR for review
+# Run with module syntax
+python -m src.dna.reverse_engineer
+```
 
 ---
 
-**Happy coding! Welcome to the PromptSync team! ??**
+## 📈 Next Steps
+
+1. **Run the demo**: `python demo_dna.py`
+2. **Try each feature individually** (see examples above)
+3. **Create your first prompt** with good metadata
+4. **Set up GitHub sync** (Phase 2)
+5. **Configure hotkey** (Phase 2)
+6. **Build your prompt library!**
+
+---
+
+## 💡 Tips & Best Practices
+
+### Organizing Prompts
+
+```
+prompts/
+├── coding/
+│   ├── python/
+│   │   ├── debug-error.md
+│   │   ├── optimize-performance.md
+│   │   └── write-tests.md
+│   └── javascript/
+├── writing/
+│   ├── emails/
+│   ├── blogs/
+│   └── social/
+└── business/
+    ├── analysis/
+    └── presentations/
+```
+
+### Variable Naming
+
+Use descriptive, consistent names:
+```markdown
+Good: {{customer_name}}, {{project_deadline}}, {{bug_description}}
+Bad: {{x}}, {{thing}}, {{stuff}}
+```
+
+### Testing Prompts
+
+Before committing:
+1. Run quality score (aim for 8+)
+2. Run security scan (aim for <20 risk)
+3. Test with real examples
+4. Iterate if needed
+
+### Iteration Workflow
+
+```
+Create → Score → Iterate → Scan → Save → Use → Learn → Improve
+         ↑___________________________________________↓
+```
+
+---
+
+Questions? Check the README or open an issue!
