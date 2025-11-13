@@ -14,7 +14,7 @@ namespace PromptSync.Desktop;
 /// <summary>
 /// Main application class with dependency injection setup.
 /// </summary>
-public partial class App : Application
+public sealed partial class App : Application
 {
     /// <summary>
     /// Gets the service provider for dependency injection.

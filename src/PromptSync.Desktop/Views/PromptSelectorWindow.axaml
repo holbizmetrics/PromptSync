@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PromptSync.Desktop.ViewModels"
         xmlns:models="using:PromptSync.Core.Models"
@@ -44,13 +44,13 @@
                     Orientation="Horizontal" 
                     Spacing="8" 
                     Margin="8,0,0,0">
-          <Button Content="?"
+          <Button Content="🔄"
                   ToolTip.Tip="Refresh prompts"
                   Command="{Binding LoadPromptsCommand}"
                   FontSize="18"
                   Width="40"
                   Height="40"/>
-          <Button Content="?"
+          <Button Content="⚙"
                   ToolTip.Tip="Settings"
                   FontSize="18"
                   Width="40"
@@ -78,10 +78,16 @@
                       BorderThickness="1"
                       BorderBrush="#E0E0E0">
                 <StackPanel Spacing="8">
-                  <TextBlock Text="{Binding Title}"
-                             FontSize="16"
-                             FontWeight="SemiBold"
-                             TextWrapping="Wrap"/>
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Title}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap" Grid.Column="0"/>
+                    <Button Content="Edit" 
+                            Command="{Binding $parent[Window].DataContext.EditPromptCommand}" 
+                            CommandParameter="{Binding}" 
+                            Grid.Column="1"/>
+                  </Grid>
                   
                   <ItemsControl ItemsSource="{Binding Tags}">
                     <ItemsControl.ItemsPanel>

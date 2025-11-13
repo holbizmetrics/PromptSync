@@ -116,3 +116,4 @@ public class SecurityScanner : ISecurityScanner
         return r.RiskLevel == SecurityRiskLevel.Safe || r.RiskLevel == SecurityRiskLevel.Low;
     }
 }
+

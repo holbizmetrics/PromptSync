@@ -4,10 +4,10 @@ using PromptSync.Core.Models;
 using PromptSync.Core.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
-using TextCopy;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using TextCopy;
 
 namespace PromptSync.Desktop.ViewModels;
 
@@ -15,11 +15,16 @@ namespace PromptSync.Desktop.ViewModels;
 /// ViewModel for the prompt selector window.
 /// Handles prompt search, selection, and context-aware suggestions.
 /// Follows MVVM pattern with CommunityToolkit.Mvvm.
+/// 
+/// ✅ FIXED: Window no longer closes after copying prompt
 /// </summary>
 public partial class PromptSelectorViewModel : ViewModelBase
 {
     private readonly IGitService _gitService;
     private readonly IAIService _aiService;
+
+    // Expose GitService for editor windows or external consumers
+    public IGitService GitService => _gitService;
 
     /// <summary>
     /// Event raised when the ViewModel requests the selector to close.
@@ -218,7 +223,8 @@ public partial class PromptSelectorViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Selects a prompt, copies it to the clipboard (with simple variable substitution), and requests the selector to close.
+    /// Selects a prompt, copies it to the clipboard (with simple variable substitution).
+    /// ✅ FIXED: No longer closes the window - allows copying multiple prompts.
     /// </summary>
     [RelayCommand]
     private async Task SelectPrompt(Prompt? prompt)
@@ -232,7 +238,7 @@ public partial class PromptSelectorViewModel : ViewModelBase
 
         try
         {
-            // Try to read current clipboard (best-effort)
+            // Try to read current clipboard (best-effort) using TextCopy
             string clipboardText = string.Empty;
             try
             {
@@ -254,18 +260,19 @@ public partial class PromptSelectorViewModel : ViewModelBase
                 if (final.Contains("{{clipboard}}")) final = final.Replace("{{clipboard}}", clipboardText);
             }
 
-            // Copy to clipboard (user-facing action)
+            // Copy to clipboard using TextCopy
             await ClipboardService.SetTextAsync(final);
 
-            StatusMessage = "Prompt copied to clipboard";
+            StatusMessage = $"✓ Copied: {prompt.Title}";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Failed to copy prompt: {ex.Message}";
         }
 
-        // Request the view to close and provide the selected prompt
-        RequestClose?.Invoke(prompt);
+        // ✅ FIXED: Don't close window - let user copy multiple prompts
+        // OLD CODE (BROKEN): RequestClose?.Invoke(prompt);
+        // NEW BEHAVIOR: Window stays open for multiple selections
     }
 
     /// <summary>
@@ -352,67 +359,54 @@ public partial class PromptSelectorViewModel : ViewModelBase
         HasSelection = value != null;
     }
 
-    /// <summary>
-    /// Loads sample prompts for testing the UI.
-    /// Remove this once real prompt loading is implemented.
-    /// </summary>
-    private void LoadSamplePrompts()
-    {
-        var samplePrompts = new[]
-        {
-            new Prompt
-            {
-                Id = "test-1",
-                Title = "Debug Python Error",
-                Content = "I'm getting this error:\n{{error}}\n\nIn this code:\n{{code}}\n\nHelp me debug it.",
-                Tags = new[] { "python", "debug", "error" },
-                Applications = new[] { "vscode", "pycharm" },
-                FilePath = Path.Combine(_promptsFolder, "debug-python.md")
-            },
-            new Prompt
-            {
-                Id = "test-2",
-                Title = "Write Unit Tests",
-                Content = "Create comprehensive unit tests for:\n{{code}}\n\nInclude edge cases and error handling.",
-                Tags = new[] { "testing", "unit-test", "qa" },
-                Applications = new[] { "vscode" },
-                FilePath = Path.Combine(_promptsFolder, "unit-tests.md")
-            },
-            new Prompt
-            {
-                Id = "test-3",
-                Title = "Code Review",
-                Content = "Review this code for:\n1. Performance issues\n2. Security vulnerabilities\n3. Best practices\n\n{{code}}",
-                Tags = new[] { "review", "security", "performance" },
-                Applications = new[] { "github", "gitlab" },
-                FilePath = Path.Combine(_promptsFolder, "code-review.md")
-            },
-            new Prompt
-            {
-                Id = "test-4",
-                Title = "Explain Complex Code",
-                Content = "Explain this code in simple terms:\n{{code}}\n\nInclude:\n- What it does\n- How it works\n- Why it's written this way",
-                Tags = new[] { "explain", "documentation", "learning" },
-                Applications = new[] { "vscode" },
-                FilePath = Path.Combine(_promptsFolder, "explain-code.md")
-            },
-            new Prompt
-            {
-                Id = "test-5",
-                Title = "Refactor for Clean Code",
-                Content = "Refactor this code following SOLID principles:\n{{code}}\n\nFocus on:\n- Single Responsibility\n- DRY principle\n- Clear naming",
-                Tags = new[] { "refactor", "clean-code", "solid" },
-                Applications = new[] { "vscode", "rider" },
-                FilePath = Path.Combine(_promptsFolder, "refactor.md")
-            }
-        };
+	/// <summary>
+	/// Loads sample prompts for testing the UI.
+	/// CREATES ACTUAL FILES so they can be saved!
+	/// </summary>
+	private void LoadSamplePrompts()
+	{
+		// Create prompts folder if it doesn't exist
+		Directory.CreateDirectory(_promptsFolder);
 
-        foreach (var prompt in samplePrompts)
-        {
-            Prompts.Add(prompt);
-            FilteredPrompts.Add(prompt);
-        }
+		var samplePrompts = new[]
+		{
+		new { Id = "test-1", Title = "Debug Python Error", Content = "I'm getting this error:\n{{error}}\n\nIn this code:\n{{code}}\n\nHelp me debug it.", Tags = "python,debug,error", Apps = "vscode,pycharm", FileName = "debug-python.md" },
+		new { Id = "test-2", Title = "Write Unit Tests", Content = "Create comprehensive unit tests for:\n{{code}}\n\nInclude edge cases and error handling.", Tags = "testing,unit-test,qa", Apps = "vscode", FileName = "unit-tests.md" },
+		new { Id = "test-3", Title = "Code Review", Content = "Review this code for:\n1. Performance issues\n2. Security vulnerabilities\n3. Best practices\n\n{{code}}", Tags = "review,security,performance", Apps = "github,gitlab", FileName = "code-review.md" },
+		new { Id = "test-4", Title = "Explain Complex Code", Content = "Explain this code in simple terms:\n{{code}}\n\nInclude:\n- What it does\n- How it works\n- Why it's written this way", Tags = "explain,documentation,learning", Apps = "vscode", FileName = "explain-code.md" },
+		new { Id = "test-5", Title = "Refactor for Clean Code", Content = "Refactor this code following SOLID principles:\n{{code}}\n\nFocus on:\n- Single Responsibility\n- DRY principle\n- Clear naming", Tags = "refactor,clean-code,solid", Apps = "vscode,rider", FileName = "refactor.md" }
+	};
 
-        StatusMessage = $"Loaded {Prompts.Count} test prompts";
-    }
+		foreach (var sample in samplePrompts)
+		{
+			var filePath = Path.Combine(_promptsFolder, sample.FileName);
+
+			// Create the markdown file with frontmatter
+			var content = $@"---
+title: {sample.Title}
+tags: {sample.Tags}
+apps: {sample.Apps}
+---
+{sample.Content}";
+
+			// Write the file
+			File.WriteAllText(filePath, content, Encoding.UTF8);
+
+			// Create the prompt object
+			var prompt = new Prompt
+			{
+				Id = sample.Id,
+				Title = sample.Title,
+				Content = sample.Content,
+				Tags = sample.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToArray(),
+				Applications = sample.Apps.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToArray(),
+				FilePath = filePath
+			};
+
+			Prompts.Add(prompt);
+			FilteredPrompts.Add(prompt);
+		}
+
+		StatusMessage = $"Loaded {Prompts.Count} sample prompts";
+	}
 }
